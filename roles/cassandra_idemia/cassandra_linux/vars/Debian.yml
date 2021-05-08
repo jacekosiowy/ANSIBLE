@@ -1,0 +1,9 @@
+---
+# vars file for roles/cassandra_idemia/cassandra_linux
+time_server: "server ntp.toya.net.pl"
+time_server_daemon: "chronyd"
+time_server_pkg: "chrony"
+cassandra_existing_hosts:
+  - '30.30.30.139 jolnvmu34'
+  - '30.30.30.140 jolnvmu35'
+  - '30.30.30.141 jolnvmu36'

@@ -1,0 +1,18 @@
+---
+# tasks file for roles/cassandra_idemia/cassandra_install
+- name: Deliver {{ cassandra_conf_file }} file
+  template:
+    src: templates/cassandra.j2
+    dest: "{{ cassandra_conf_file }}"
+    #dest: /tmp/cassandra.yaml
+    owner: cassandra
+    group: cassandra
+    mode: 0644
+- name: Deliver {{ cassandra_rack_conf_file }} file
+  template:
+    src: templates/cassandra-rackdc.properties.j2
+    dest: "{{ cassandra_rack_conf_file }}"
+    owner: cassandra
+    group: cassandra
+    mode: 0644
+  when: 'ansible_hostname == host_from_dc2|string'

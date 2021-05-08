@@ -1,0 +1,25 @@
+- name: Executes nodetool command on all cassandra nodes
+  hosts: casscluster2
+  become: yes
+  become_user: cassandra
+  become_method: sudo
+  vars:
+    cassandra_home_dir: /CASSANDRA
+    cassandra_home_bin: apache-cassandra-3.11.10
+    cassandra_home_path: "{{ cassandra_home_dir }}/{{ cassandra_home_bin }}" 
+  tasks:
+    - name: Execute nodetool command ... {{ nodetool_command }}
+      #      shell: "{{ cassandra_home_path }}/bin/nodetool {{ nodetool_command }}"
+      shell: "nodetool {{ nodetool_command }}"
+      register: cmd_out
+      ignore_errors: yes
+      when: 
+           nodetool_command == "gcstats"
+           or
+           nodetool_command == "info"
+           or
+           nodetool_command == "tpstats"
+
+    - name: Status outout
+      debug:
+        msg: "{{ cmd_out.stdout.split('\n') }}"

@@ -1,0 +1,22 @@
+#- name: Test only these tasks
+#  hosts: jolnvms32
+#  become: yes
+#  vars:
+#    cassandra_home_dir: /CASSANDRA
+#    cassandra_home_bin: apache-cassandra-3.11.10
+#    cassandra_home_path: "{{ cassandra_home_dir }}/{{ cassandra_home_bin }}" 
+#  tasks:
+    - name: Add cql host parameter to cassandra user profile /home/cassandra/.profile
+      lineinfile:
+        path: /home/cassandra/.profile
+        line: "export CQLSH_HOST={{ ansible_ssh_host }}"
+        state: present
+    - name: Add other parameters to cassandra user profile /home/cassandra/.profile
+      lineinfile:
+        path: /home/cassandra/.profile
+        line: "{{ item }}"
+        state: present
+      with_items:
+        - "export CQLSH_PORT=9042"       
+        - "export CASSANDRA_HOME={{ cassandra_home_path }}"       
+        - "export PATH=$PATH:$CASSANDRA_HOME/bin"       

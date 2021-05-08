@@ -1,0 +1,10 @@
+---
+- name: Deploy cassandra on Linux Ubuntu
+  hosts: deploy_new_cassandra_ubuntu
+  become: yes
+  #serial: 1
+  roles:
+    - cassandra_idemia/cassandra_firewall
+    - cassandra_idemia/cassandra_repository
+    - cassandra_idemia/cassandra_linux
+    - cassandra_idemia/cassandra_install

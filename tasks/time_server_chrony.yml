@@ -1,0 +1,23 @@
+#- name: Test only these tasks
+#  hosts: jolnvms32
+#  become: yes
+#  vars:
+#    time_server: "server ntp.toya.net.pl"
+#  tasks:
+    - name: Modify chrony configuration ... 
+      shell: "echo \"{{ time_server }}\" > /etc/chrony.d/toya.conf"
+    - name: Enable ntp ... 
+      shell: "timedatectl set-ntp 1"
+    - name: Start and enable the chronyd service
+      service:
+        name: chronyd
+        enabled: true
+        state: started
+    - name: Wait for chrony to start ... 
+      shell: "sleep 5"
+    - name: Check time server ... 
+      shell: "chronyc sources"
+      register: cmd_out
+    - name: Status outout
+      debug:
+        msg: "{{ cmd_out.stdout.split('\n') }}"

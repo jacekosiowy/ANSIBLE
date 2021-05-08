@@ -1,0 +1,31 @@
+#- name: Test only these tasks
+#  hosts: jolnvms32
+#  become: yes
+#  become_user: cassandra
+#  vars:
+#    cassandra_home_dir: /CASSANDRA
+#    cassandra_home_bin: apache-cassandra-3.11.10
+#    cassandra_home_path: "{{ cassandra_home_dir }}/{{ cassandra_home_bin }}" 
+#  tasks:
+    - name: Check env
+      debug:
+        msg: "{{ ansible_user }} {{ ansible_ssh_user }}"
+    - name: Start cassandra ... 
+      shell: "{{ cassandra_home_path }}/bin/cassandra"
+      become: yes
+      become_method: su
+      become_user: cassandra
+    - name: Wait for cassandra to start ... 
+      shell: "sleep 30"
+      become: yes
+      become_method: su
+      become_user: cassandra
+    - name: Check cassandra ... 
+      shell: "{{ cassandra_home_path }}/bin/nodetool status"
+      become: yes
+      become_method: sudo
+      become_user: cassandra
+      register: cmd_out
+    - name: Status outout
+      debug:
+        msg: "{{ cmd_out.stdout.split('\n') }}"

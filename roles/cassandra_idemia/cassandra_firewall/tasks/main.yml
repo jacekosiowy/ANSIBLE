@@ -1,0 +1,53 @@
+---
+# tasks file for roles/cassandra_idemia/cassandra_firewall
+- name: Include vars for os family ... {{ ansible_os_family }}
+  include_vars:
+    file: "{{ ansible_os_family }}.yml"
+- name: Ensure firewall package is installed
+  package:
+    name: "{{ firewall_packages }}"
+    state: present
+- name: Start and enable the {{ firewall_service }} firewall service
+  systemd:
+    name: "{{ firewall_service }}"
+    enabled: true
+    state: started
+    #     - name: Set python3 for Debian based system
+    #       set_fact:
+    #         mypy: "/usr/bin/python3"
+    #       when:
+    #         - ansible_os_family == "Debian"
+- name: Open ports for Cassandra ... Linux Debian family
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+    state: enabled
+  with_items:
+    - "{{ open_ports }}"
+  when:
+    - ansible_os_family == "Debian"
+  #vars:
+  # ansible_python_interpreter: "{{ mypy | default('python') }}"
+- name: Ensure ports for cassandra open ... Linux RedHat family
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    immediate: yes
+    state: enabled
+  with_items:
+    - "{{ open_ports }}"
+  when:
+    - ansible_os_family == "RedHat"
+  #vars:
+  #ansible_python_interpreter: "{{ mypy | default('python') }}"
+- name: Check firewall ... Linux Debian family
+  shell: "ufw status verbose"
+  register: fw_out
+  when:
+    - ansible_os_family == "Debian"
+- name: Show firewall status ... Linux Debian family
+  debug:
+    msg: "{{ fw_out.stdout.split('\n') }}"
+  when:
+    - ansible_os_family == "Debian"

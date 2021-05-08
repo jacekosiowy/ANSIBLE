@@ -1,0 +1,13 @@
+---
+# vars file for roles/cassandra_idemia/cassandra_firewall
+firewall_service: firewalld
+firewall_packages:
+  - python-firewall
+  - firewalld
+open_ports:
+  - 22/tcp  # ssh
+  - 7199/tcp  # jmx
+  - 7000/tcp  # Internode communication (not used if TLS enabled)
+  - 7001/tcp  # TLS Internode communication (used if TLS enabled)
+  - 9160/tcp  # Thrift client API
+  - 9042/tcp  # CQL native transport port

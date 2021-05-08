@@ -1,0 +1,6 @@
+---
+- name: Deploy motd
+  hosts: deploy_new_cassandra_ubuntu
+  become: yes
+  roles:
+    - motd

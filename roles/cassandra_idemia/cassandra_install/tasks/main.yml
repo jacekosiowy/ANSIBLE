@@ -1,0 +1,63 @@
+---
+# tasks file for roles/cassandra_idemia/cassandra_install
+- name: Include vars for OS family
+  include_vars:
+    file: "{{ ansible_os_family }}.yml"
+- name: Create the remote cassandra directory
+  file:
+    state: directory
+    recurse: yes
+    path: "{{ cassandra_home_dir }}"
+- name: Install the Cassandra packages
+  apt:
+    pkg:
+    - "{{ cassandra_pkg  }}"
+    - "{{ cassandra_tools_pkg }}"
+    state: present
+- name: Stop service cassandra
+  systemd:
+    name: "{{ cassandra_daemon }}"
+    state: stopped
+- name: Remove cassandra data directory
+  shell: "/bin/rm -rf {{ cassandra_home_dir }}/data/*"
+- name: Deliver cassandra conf files
+  import_tasks: deliver_conf_files.yml
+  #- name: Modify cassandra conf file
+  #import_tasks: modify_cassandra_conf.yml
+  #     - name: Modify cassandra user profile 
+  #import_tasks: tasks/modify_user_profile.yml
+- name: Enable service cassandra
+  systemd:
+    name: "{{ cassandra_daemon }}"
+    enabled: yes
+- name: Start service cassandra
+  systemd:
+    name: "{{ cassandra_daemon }}"
+    state: started
+    #     - name: Check bootstrap nodetool bootstrap resume
+    #       shell: "nodetool bootstrap resume"
+    # register: bootstrap_out
+    # until: bootstrap_out.stdout == "Node is already bootstrapped."
+    #- name: Check outout nodetool bootstrap resume
+    #debug:
+    #msg: "{{ bootstrap_out.stdout.split('\n') }}"
+- name: Wait until the string "Bootstrap completed" is in the file {{ check_bootstrap_file }} before continuing
+  wait_for:
+    path: "{{ check_bootstrap_file }}"
+    search_regex: "Bootstrap completed"
+    timeout: 120
+  when: 'ansible_hostname != first_host_in_cluster|string'
+- name: Pause for 2 minutes to build up first cassandra node
+  pause:
+    minutes: 2
+  when: 'ansible_hostname == first_host_in_cluster|string'
+- name: Check status nodetool status
+  shell: "nodetool status"
+  register: cstatus_out
+  ignore_errors: yes
+  when: 'ansible_hostname != first_host_in_cluster|string'
+- name: Status output
+  debug:
+    msg: "{{ cstatus_out.stdout.split('\n') }}"
+  when: 'ansible_hostname != first_host_in_cluster|string'
+

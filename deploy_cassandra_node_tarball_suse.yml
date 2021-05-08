@@ -1,0 +1,162 @@
+--- # Playbook to deploy Apache Cassandra Cluster Node on Linux SuSE
+- name: Deploy Cassandra Node as tarball
+  hosts: deploy_new_cassandra_suse
+  become: yes
+  vars:
+    time_server: "server ntp.toya.net.pl"
+    cassandra_tar: /tmp/apache-cassandra-3.11.10-bin.tar.gz
+    cassandra_home_dir: /CASSANDRA
+    cassandra_home_bin: apache-cassandra-3.11.10
+    cassandra_home_path: "{{ cassandra_home_dir }}/{{ cassandra_home_bin }}"
+    java_rpm_file: /tmp/jre-8u291-linux-x64.rpm
+    java_pkg: jre1.8-1.8.0_291-fcs.x86_64
+    git_pkg: git
+    screen_pkg: screen
+    firewall_service: firewalld  
+    cassandra_admin_id: 1001
+    cassandra_group_id: 1001
+    cassandra_password: redhat77!
+    cassandra_user: cassandra
+    cassandra_group: cassandra
+    cassandra_existing_hosts: 
+      - '30.30.30.136 jolnvms31'
+      - '30.30.30.137 jolnvms32'
+      - '30.30.30.138 jolnvms33'
+   #cassandra_conf_hostname: "jolnvms32"
+    cassandra_conf_file: "{{ cassandra_home_dir }}/{{ cassandra_home_bin }}/conf/cassandra.yaml"
+    cassandra_conf_cluster_name: "cluster_name: \'JOSuseCluster1\'"
+    cassandra_conf_data_file_dir: "data_file_directories:"
+    cassandra_conf_data_file_dir_l1: "    - {{ cassandra_home_dir }}/data"
+    cassandra_conf_commitlog_dir: "commitlog_directory: {{ cassandra_home_dir }}/commitlog"
+    cassandra_conf_saved_cache_dir: "saved_caches_directory: {{ cassandra_home_dir }}/saved_caches"
+    cassandra_conf_hints_dir: "hints_directory:  {{ cassandra_home_dir }}/hints"
+    cassandra_conf_seeds: "          - seeds: \"jolnvms31, jolnvms32\""
+    cassandra_conf_listen_address: "listen_address: "
+    cassandra_conf_rpc_address: "rpc_address: "
+  tasks:
+          #    - name: Install the required packages
+          #      zypper:
+          #        name:
+          #          - "{{ git_pkg  }}"
+          #          - "{{ screen_pkg }}"
+          #        state: latest
+    - name: Create the remote cassandra directory
+      file:
+        state: directory
+        recurse: yes
+        path: "{{ cassandra_home_dir }}"
+    - name: Create the remote cassandra log directory
+      file:
+        state: directory
+        recurse: yes
+        path: /var/log/cassandra
+    - name: Copy source java files 
+      copy:
+        src: "{{ java_rpm_file }}"
+        dest: /tmp
+    - name: Copy source cassandra files 
+      copy:
+        src: "{{ cassandra_tar }}"
+        dest: /tmp
+    - name: Start and enable the {{ firewall_service }} service
+      service:
+        name: "{{ firewall_service }}"
+        enabled: true
+        state: started
+    - name: Open ports for Cassandra
+      firewalld:
+        port: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: enabled
+      loop:
+        - 7000/tcp
+        - 7001/tcp
+        - 7199/tcp
+        - 9042/tcp
+        - 9160/tcp
+        - 9142/tcp
+    - name: Add cassandra group
+      group:
+        gid: "{{ cassandra_group_id }}"
+        name: "{{ cassandra_group }}"
+        state: present
+        gid: "{{ cassandra_group_id }}"
+    - name: Add the cassandra user 
+      user:
+        name: "{{ cassandra_user }}"
+        comment: Cassandra Admin
+        uid: "{{ cassandra_admin_id }}"
+        group: cassandra
+        password: "{{ cassandra_password|password_hash('sha512') }}"
+    - name: Set cassandra directory ownership
+      file:
+        path: "{{ cassandra_home_dir }}"
+        owner: "{{ cassandra_user }}"
+        group: "{{ cassandra_group }}"
+    - name: Set cassandra log directory ownership
+      file:
+        path: /var/log/cassandra
+        owner: "{{ cassandra_user }}"
+        group: "{{ cassandra_group }}"
+        mode: 0770
+    - name: Set cassandra source file ownership
+      file:
+        path: "{{ cassandra_tar }}"
+        owner: "{{ cassandra_user }}"
+        group: "{{ cassandra_group }}"
+    - name: Install java 
+      shell: "rpm -q {{ java_pkg }} || rpm -i {{ java_rpm_file }}"
+    - name: Create cassandra subdirectory for DATA
+      file: 
+        path:  "{{cassandra_home_dir}}/data"
+        owner: "{{ cassandra_user }}"
+        group: "{{ cassandra_group }}"
+        mode: 0775
+        state: directory
+    - name: Create cassandra subdirectory for CACHE
+      file: 
+        path:  "{{cassandra_home_dir}}/saved_caches"
+        owner: "{{ cassandra_user }}"
+        group: "{{ cassandra_group }}"
+        mode: 0775
+        state: directory
+    - name: Create cassandra subdirectory for COMMITLOG
+      file: 
+        path:  "{{cassandra_home_dir}}/commitlog"
+        owner: "{{ cassandra_user }}"
+        group: "{{ cassandra_group }}"
+        mode: 0775
+        state: directory
+    - name: Create cassandra subdirectory for HINTS
+      file: 
+        path:  "{{cassandra_home_dir}}/hints"
+        owner: "{{ cassandra_user }}"
+        group: "{{ cassandra_group }}"
+        mode: 0775
+        state: directory
+    - name: Extract cassandra files
+      unarchive:
+        src: "{{ cassandra_tar }}"
+        dest: "{{ cassandra_home_dir }}"
+        owner: "{{ cassandra_user }}"
+        group: "{{ cassandra_group }}"
+    - name: Check value of cassandra_home_bin
+      shell: "ls -d {{cassandra_home_dir}}/apache-cassandra-*"
+      register: cassandra_home_bin_dir
+    - name: Set cassandra bin directory ownership
+      file:
+        path: "{{ cassandra_home_bin_dir.stdout }}"
+        owner: "{{ cassandra_user }}"
+        group: "{{ cassandra_group }}"
+    - name: Set time server
+      import_tasks: tasks/time_server_chrony.yml
+    - name: Modify /etc/hosts file
+      import_tasks: tasks/modify_etc_hosts.yml
+    - name: Modify cassandra conf file
+      import_tasks: tasks/modify_cassandra_conf.yml
+    - name: Modify cassandra user profile 
+      import_tasks: tasks/modify_user_profile.yml
+    - name: Start cassandra
+      import_tasks: tasks/start_cassandra.yml
+...

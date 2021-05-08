@@ -1,0 +1,15 @@
+--- # Playbook Create devops user
+- name: Create devops user
+  hosts: casscluster2
+  become: yes
+  vars:
+      devops_password: redhat77!
+  tasks:
+    - name: Add the devops user 
+      user:
+        name: devops
+        comment: Ansible User
+        uid: 1002
+        group: users
+        password: "{{ devops_password|password_hash('sha512') }}"
+...

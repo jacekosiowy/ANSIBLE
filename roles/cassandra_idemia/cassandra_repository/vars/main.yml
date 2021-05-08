@@ -1,0 +1,3 @@
+---
+# vars file for roles/cassandra_idemia/cassandra_repository
+time_server_pkg: "chrony"

@@ -1,0 +1,151 @@
+---
+# tasks file for roles/cassandra_idemia/cassandra_linux
+- name: Include vars for OS family
+  include_vars:
+    file: "{{ ansible_os_family }}.yml"
+
+# Praparing hosts file
+
+- name: Print host IP and name
+  debug:
+   msg: "{{ ansible_default_ipv4.address }} {{ ansible_ssh_host }}"
+  when: ansible_default_ipv4.address is defined
+- name: Make sure host IP is not in the /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    state: absent
+    regexp: "^{{ ansible_default_ipv4.address }}.*"
+  check_mode: true
+  changed_when: false # This just makes things look prettier in the logs
+  register: hostsout
+- debug:
+    msg: "Host name exists in /etc/hosts file ... output = {{ hostsout.found }}"
+  when: hostsout.found
+- debug:
+    msg: "Host name doesnt exist in /etc/hosts ... output = {{ hostsout.found }}"
+  when: not hostsout.found
+- name: Add host IP to the /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ ansible_default_ipv4.address }} {{ ansible_ssh_host }}"
+    state: present
+  when: not hostsout.found
+- debug:
+    msg: "Existing cassandra hosts to be added ... {{ item }}"
+  with_items:
+    - "{{ cassandra_existing_hosts }}"
+- name: Add existing cassandra hosts IP to the /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ item }}"
+    state: present
+  with_items:
+    - "{{ cassandra_existing_hosts }}"
+
+# Preparing swap
+
+#- name: Disable Swap
+#  command: swapoff -a
+#  when:
+#    - ansible_swaptotal_mb > 0
+
+#- name: Remove swap partitions
+#  mount:
+#    path: swap
+#    state: absent
+
+- name: Ensure Swappiness is 1
+  sysctl:
+    name: vm.swappiness
+    value: "1"
+    sysctl_set: yes
+    reload: yes
+
+# Setting kernel parameters
+- name: Ensure max_map_count is 1048575
+  sysctl:
+    name: vm.max_map_count
+    value: "1048575"
+    sysctl_set: yes
+
+- name: Ensure limits are set
+  blockinfile:
+    path: /etc/security/limits.conf
+    block: |
+      cassandra - memlock unlimited
+      cassandra - nofile 100000
+      cassandra - nproc 32768
+      cassandra - as unlimited
+    marker: "#<!-- {mark} ANSIBLE MANAGED BLOCK -->"
+    state: present
+
+- name: Extra Limit for RH Derived Distros
+  lineinfile:
+    path: /etc/security/limits.d/90-nproc.conf
+    regexp: "^\\* - nproc 32768"
+    line: "* - nproc 32768"
+    create: yes
+  when: ansible_os_family == "RedHat"
+
+- name: TCP setting for prevents timeouts and handling many connections
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    sysctl_file: /etc/sysctl.conf
+    reload: yes
+  with_items:
+    - { key: net.ipv4.tcp_keepalive_time, value: 60 }
+    - { key: net.ipv4.tcp_keepalive_probes, value: 3 }
+    - { key: net.ipv4.tcp_keepalive_intvl, value: 10 }
+    - { key: net.core.rmem_max, value: 16777216 }
+    - { key: net.core.wmem_max, value: 16777216 }
+    - { key: net.core.rmem_default, value: 16777216 }
+    - { key: net.core.wmem_default, value: 16777216 }
+    - { key: net.core.optmem_max, value: 40960 }
+    - { key: net.ipv4.tcp_rmem, value: "4096 87380 16777216" }
+    - { key: net.ipv4.tcp_wmem, value: "4096 65536 16777216" }
+
+- name: Disable zone_reclaim_mode
+  sysctl:
+    name: vm.zone_reclaim_mode
+    value: '0'
+    state: present
+    sysctl_file: /etc/sysctl.conf
+    reload: yes
+
+# Preparing NTP settings
+
+- name: Install time server
+  package:
+    name: "{{ time_server_pkg }}"
+    state: present
+
+- name: Ensure ntp service starts
+  service:
+    name: "{{ time_server_daemon }}"
+    enabled: yes
+    state: started
+
+- name: Modify chrony configuration ...
+  shell: "echo \"{{ time_server }}\" >> /etc/chrony/chrony.conf"
+
+- name: Enable ntp ...
+  shell: "timedatectl set-ntp 1"
+
+- name: Start and enable the chronyd service
+  service:
+    name: chronyd
+    enabled: true
+    state: restarted
+
+- name: Wait for chrony to start ...
+  shell: "sleep 5"
+
+- name: Check time server ...
+  shell: "chronyc sources"
+  register: ts_cmd_out
+
+- name: Time server status output
+  debug:
+    msg: "{{ ts_cmd_out.stdout.split('\n') }}"

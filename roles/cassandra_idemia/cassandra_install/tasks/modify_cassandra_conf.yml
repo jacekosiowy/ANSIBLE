@@ -1,0 +1,85 @@
+- name: Print cassandra conf file
+  debug:
+    msg: "{{ cassandra_conf_file }}"
+- name: Print cassandra parameters to set
+  debug:
+    msg: "{{ item }}"
+  with_items:
+    - "{{ cassandra_conf_cluster_name }}"
+    - "{{ cassandra_conf_data_file_dir }}"
+    - "{{ cassandra_conf_data_file_dir_l1 }}"
+    - "{{ cassandra_conf_commitlog_dir }}"
+    - "{{ cassandra_conf_saved_cache_dir }}"
+    - "{{ cassandra_conf_hints_dir }}"
+    - "{{ cassandra_conf_seeds }}"
+    - "{{ cassandra_conf_listen_address }}"
+    - "{{ cassandra_conf_rpc_address }}"
+    - "{{ cassandra_conf_snitch_value }}"
+    - "{{ cassandra_rack_conf_dc }}"
+- name: Modifying parameter ... {{ cassandra_conf_cluster_name }}
+  lineinfile:
+    path: "{{ cassandra_conf_file }}"
+    state: present
+    regexp: "{{ cassandra_conf_cluster_name_regex }}"
+    line: "{{ cassandra_conf_cluster_name }}"
+- name: Modifying parameter ... {{ cassandra_conf_data_file_dir }}
+  lineinfile:
+    path: "{{ cassandra_conf_file }}"
+    state: present
+    regexp: "{{ cassandra_conf_data_file_dir_regex }}"
+    line: "{{ cassandra_conf_data_file_dir }}"
+- name: Modifying parameter ... {{ cassandra_conf_data_file_dir_l1 }}
+  lineinfile:
+    path: "{{ cassandra_conf_file }}"
+    state: present
+    insertafter: "{{ cassandra_conf_data_file_dir_regex }}"
+    line: "{{ cassandra_conf_data_file_dir_l1 }}"
+- name: Modifying parameter ... {{ cassandra_conf_commitlog_dir }}
+  lineinfile:
+    path: "{{ cassandra_conf_file }}"
+    state: present
+    regexp: "{{ cassandra_conf_commitlog_dir_regex }}"
+    line: "{{ cassandra_conf_commitlog_dir }}"
+- name: Modifying parameter ... {{ cassandra_conf_saved_cache_dir }}
+  lineinfile:
+    path: "{{ cassandra_conf_file }}"
+    state: present
+    regexp: "{{ cassandra_conf_saved_cache_dir_regex }}"
+    line: "{{ cassandra_conf_saved_cache_dir }}"
+- name: Modifying parameter ... {{ cassandra_conf_hints_dir }}
+  lineinfile:
+    path: "{{ cassandra_conf_file }}"
+    state: present
+    regexp: "{{ cassandra_conf_hints_dir_regex }}"
+    line: "{{ cassandra_conf_hints_dir }}"
+- name: Modifying parameter ... {{ cassandra_conf_seeds }}
+  lineinfile:
+    path: "{{ cassandra_conf_file }}"
+    state: present
+    regexp: "{{ cassandra_conf_seeds_regex }}"
+    line: "{{ cassandra_conf_seeds }}"
+- name: "Modifying parameter ... {{ cassandra_conf_listen_address }} {{ ansible_ssh_host }}"
+  lineinfile:
+    path: "{{ cassandra_conf_file }}"
+    state: present
+    regexp: "{{ cassandra_conf_listen_address_regex }}"
+    line: "{{ cassandra_conf_listen_address }}{{ ansible_ssh_host }}"
+- name: "Modifying parameter ... {{ cassandra_conf_rpc_address }}{{ ansible_ssh_host }}"
+  lineinfile:
+    path: "{{ cassandra_conf_file }}"
+    state: present
+    regexp: "{{ cassandra_conf_rpc_address_regex }}"
+    line: "{{ cassandra_conf_rpc_address }}{{ ansible_ssh_host }}"
+- name: Modifying parameter ... {{ cassandra_conf_snitch_value }}
+  lineinfile:
+    path: "{{ cassandra_conf_file }}"
+    state: present
+    regexp: "{{ cassandra_conf_snitch_regex }}"
+    line: "{{ cassandra_conf_snitch_value }}"
+- name: Modifying parameter ... {{ cassandra_rack_conf_dc }}
+  lineinfile:
+    path: "{{ cassandra_rack_conf_file }}"
+    state: present
+    regexp: "{{ cassandra_rack_conf_dc_regex }}"
+    line: "{{ cassandra_rack_conf_dc }}"
+  when: 'ansible_hostname == host_from_dc2|string'

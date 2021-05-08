@@ -1,0 +1,81 @@
+--- # Playbook to remove Apache Cassandra Cluster Node on Linux SuSE
+- name: Remove Cassandra Node
+  hosts: deploy_new_cassandra_suse
+  become: yes
+  vars:
+    cassandra_tar: /tmp/apache-cassandra-3.11.10-bin.tar.gz
+    cassandra_home_dir: /CASSANDRA
+    cassandra_home_bin: apache-cassandra-3.11.10
+    cassandra_home_path: "{{ cassandra_home_dir }}/{{ cassandra_home_bin }}"
+    java_rpm_file: /tmp/jre-8u291-linux-x64.rpm
+    git_pkg: git
+    screen_pkg: screen
+    firewall_service: firewalld
+    cassandra_existing_hosts:
+      - '30.30.30.136'
+      - '30.30.30.137'
+      - '30.30.30.138'
+  tasks:
+    - name: Decomm cassandra node
+      import_tasks: tasks/decomm_cassandra.yml
+          #    - name: Remove the required packages
+          #      zypper:
+          #        name:
+          #- "{{ git_pkg  }}"
+          #- "{{ screen_pkg }}"
+          #state: absent
+    - name: Remove source java files
+      file:
+        state: absent
+        path: "{{ java_rpm_file }}"
+    - name: Remove source cassandra files
+      file:
+        state: absent
+        path: "{{ cassandra_tar }}"
+    - name: Close ports for Cassandra
+      firewalld:
+        port: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: disabled
+      loop:
+        - 7000/tcp
+        - 7001/tcp
+        - 7199/tcp
+        - 9042/tcp
+        - 9160/tcp
+        - 9142/tcp
+          #    - name: Remove cassandra subdirectories
+          # file:
+          #state: absent 
+          #path: "{{ cassandra_home_dir }}/{{ item }}"
+          #with_items:
+          #  - data
+          #  - saved_caches
+          #  - commitlog
+          #  - hints
+    - name: Remove cassandra directory
+      file:
+        state: absent
+        path: "{{ cassandra_home_dir }}"
+    - name: Remove cassandra log directory
+      file:
+        state: absent
+        path: /var/log/cassandra
+    - name: Remove cassandra user
+      user:
+        name: cassandra
+        state: absent
+        remove: yes
+    - name: Remove cassandra group
+      group:
+        name: cassandra
+        state: absent
+    - name: Remove hosts IP from /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        state: absent
+        regexp: "^{{ item }}.*"
+      with_items:
+        - "{{ cassandra_existing_hosts }}"
+...

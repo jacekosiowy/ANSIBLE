@@ -1,0 +1,43 @@
+#- name: Test only these tasks
+#  hosts: jolnvms32
+#  become: yes
+#  vars:
+#    cassandra_existing_hosts:
+#      - '30.30.30.136 jolnvms31'
+#      - '30.30.30.138 jolnvms33'
+#  tasks:
+    - name: Print host IP and name
+      debug:
+        msg: "{{ ansible_default_ipv4.address }} {{ ansible_ssh_host }}"
+      when: ansible_default_ipv4.address is defined
+    - name: Make sure host IP is not in the /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        state: absent
+        regexp: "^{{ ansible_default_ipv4.address }}.*"
+      check_mode: true
+      changed_when: false # This just makes things look prettier in the logs
+      register: hostsout
+    - debug: 
+        msg: "Host name exists in /etc/hosts file ... output = {{ hostsout.found }}"
+      when: hostsout.found
+    - debug: 
+        msg: "Host name doesnt exist in /etc/hosts ... output = {{ hostsout.found }}"
+      when: not hostsout.found
+    - name: Add host IP to the /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ ansible_default_ipv4.address }} {{ ansible_ssh_host }}"
+        state: present
+      when: not hostsout.found
+    - debug: 
+        msg: "Existing cassandra hosts to be added ... {{ item }}"
+      with_items:
+        - "{{ cassandra_existing_hosts }}"       
+    - name: Add existing cassandra hosts IP to the /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ item }}"
+        state: present
+      with_items:
+        - "{{ cassandra_existing_hosts }}"       

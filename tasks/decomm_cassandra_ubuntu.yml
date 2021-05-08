@@ -1,0 +1,33 @@
+#- name: Test only these tasks
+#  hosts: jolnvmu36
+  #become: yes
+  #become_user: cassandra
+    #vars:
+    #cassandra_home_dir: /CASSANDRA
+    #cassandra_home_bin: apache-cassandra-3.11.10
+    #cassandra_home_path: "{{ cassandra_home_dir }}/{{ cassandra_home_bin }}" 
+ #tasks:
+    - name: Check cassandra ... 
+      shell: "nodetool status"
+      #become: yes
+      #become_method: sudo
+      #become_user: cassandra
+      register: cmd_out
+    - name: Status outout
+      debug:
+        msg: "{{ cmd_out.stdout.split('\n') }}"
+    - name: Decomm cassandra node ... 
+      shell: "nodetool decommission"
+#      become: yes
+#      become_method: sudo
+#      become_user: cassandra
+    - name: Drain cassandra node ... 
+      shell: "nodetool drain"
+#      become: yes
+#      become_method: sudo
+#      become_user: cassandra
+    - name: Stopdaemon cassandra node ... 
+      shell: "nodetool stopdaemon"
+#      become: yes
+#      become_method: sudo
+#      become_user: cassandra

@@ -1,0 +1,29 @@
+- name: Test
+  hosts: deploy_new_cassandra_ubuntu
+  become: yes
+  tasks:
+    - name: Ensure all Cassandra nodes are in the UN (Up/Normal) state.
+      community.cassandra.cassandra_status:
+        poll: 2
+        interval: 10
+      register: cm_out1
+    - name: Output1
+      debug:
+        msg: "{{ cm_out1 }}"
+    - name: Run the DESC KEYSPACES cql command
+      community.cassandra.cassandra_cqlsh:
+        execute: "DESC KEYSPACES"
+        cqlsh_host: "{{ ansible_host }}"
+        username: cassandra
+        password: cassandra
+      register: cm_out2
+    - name: Output2
+      debug:
+        msg: "{{ cm_out2 }}"
+    - name: Run flush on the Cassandra node
+      community.cassandra.cassandra_flush:
+      register: cm_out3
+    - name: Output3
+      debug:
+        msg: "{{ cm_out3 }}"
+       

@@ -1,0 +1,101 @@
+--- # Playbook to remove Apache Cassandra Cluster Node on Linux UBUNTU
+- name: Remove Cassandra Node
+  hosts: deploy_new_cassandra_ubuntu
+  serial: 1
+  become: yes
+  vars:
+    time_server: "server ntp.toya.net.pl"
+    cassandra_home_dir: /var/lib/cassandra
+    cassandra_etc_dir: /etc/cassandra
+    cassandra_log_dir: /var/log/cassandra
+    cassandra_repo_dir: /etc/apt/sources.list.d/cassandra.sources.list
+    git_pkg: git
+    screen_pkg: screen
+    cassandra_pkg: cassandra
+    cassandra_tools_pkg: cassandra-tools
+    firewall_service: ufw
+    cassandra_existing_hosts:
+      - '30.30.30.139'
+      - '30.30.30.140'
+      - '30.30.30.141'
+    first_host_in_cluster: "jolnvmu34"
+  tasks:
+    - name: Decomm cassandra node
+      import_tasks: tasks/decomm_cassandra_ubuntu.yml
+      when: 'ansible_hostname != first_host_in_cluster|string'
+    - name: Close ports for Cassandra
+      ufw:
+        rule: deny
+        port: "{{ item }}"
+        proto: tcp
+        state: enabled
+      loop:
+         - '7000'
+         - '7001'
+         - '7199'
+         - '9042'
+         - '9160'
+         - '9142'
+    - name: Disable firewall 
+      ufw:
+        state: disabled
+    - name: Stop service cassandra
+      systemd:
+        name: cassandra
+        state: stopped
+    - name: Disable service cassandra and ensure it is not masked
+      systemd:
+        name: cassandra
+        enabled: no
+        masked: no
+    - name: Reload systemd daemon
+      shell: "systemctl daemon-reload"
+    - name: Remove Cassandra packages
+      apt:
+       pkg:
+         - "{{ cassandra_pkg  }}"
+         - "{{ cassandra_tools_pkg }}"
+       state: absent
+       purge: yes
+    - name: Remove cassandra directory
+      file:
+        state: absent
+        path: "{{ cassandra_home_dir }}"
+    - name: Remove cassandra log directory
+      file:
+        state: absent
+        path: "{{ cassandra_log_dir }}"
+    - name: Remove cassandra etc directory
+      file:
+        state: absent
+        path: "{{ cassandra_etc_dir }}"
+    - name: Remove cassandra user
+      user:
+        name: cassandra
+        state: absent
+        remove: yes
+    - name: Remove cassandra group
+      group:
+        name: cassandra
+        state: absent
+    - name: Remove hosts IP from /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        state: absent
+        regexp: "^{{ item }}.*"
+      with_items:
+        - "{{ cassandra_existing_hosts }}"
+    - name: Remove time server
+      lineinfile:
+        path: /etc/chrony/chrony.conf
+        state: absent
+        regexp: "^{{ time_server }}.*"
+    - name: Restart time server
+      systemd:
+        name: chronyd
+        state: stopped
+    - name: Remove cassandra repository
+      file:
+        state: absent
+        path: "{{ cassandra_repo_dir }}"
+...

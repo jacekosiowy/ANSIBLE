@@ -1,0 +1,37 @@
+---
+# vars file for roles/cassandra_idemia/cassandra_install
+cassandra_home_dir: /var/lib/cassandra
+cassandra_home_path: "{{ cassandra_home_dir }}/{{ cassandra_home_bin }}"
+cassandra_data_dir: "{{ cassandra_home_dir }}/data"
+cassandra_admin_id: 1001
+cassandra_group_id: 1001
+cassandra_password: redhat77!
+cassandra_user: cassandra
+cassandra_group: cassandra
+cassandra_conf_file: "/etc/cassandra/cassandra.yaml"
+cassandra_rack_conf_file: "/etc/cassandra/cassandra-rackdc.properties"
+cassandra_conf_cluster_name: "cluster_name: \'JOUbuntuCluster1\'"
+cassandra_conf_cluster_name_regex: ".*cluster_name:.*"
+cassandra_conf_data_file_dir: "data_file_directories:"
+cassandra_conf_data_file_dir_regex: ".*data_file_directories:.*"
+cassandra_conf_data_file_dir_l1: "    - {{ cassandra_home_dir }}/data"
+cassandra_conf_commitlog_dir: "commitlog_directory: {{ cassandra_home_dir }}/commitlog"
+cassandra_conf_commitlog_dir_regex: ".*commitlog_directory:.*"
+cassandra_conf_saved_cache_dir: "saved_caches_directory: {{ cassandra_home_dir }}/saved_caches"
+cassandra_conf_saved_cache_dir_regex: ".*saved_caches_directory:.*"
+cassandra_conf_hints_dir: "hints_directory:  {{ cassandra_home_dir }}/hints"
+cassandra_conf_hints_dir_regex: ".*hints_directory:.*"
+cassandra_conf_seeds: "          - seeds: \"jolnvmu34\""
+cassandra_conf_seeds_regex: ".*- seeds:.*"
+cassandra_conf_listen_address: "listen_address: "
+cassandra_conf_listen_address_regex: "^listen_address:.*"
+cassandra_conf_rpc_address: "rpc_address: "
+cassandra_conf_rpc_address_regex: "^rpc_address:.*"
+cassandra_conf_snitch_value: "endpoint_snitch: GossipingPropertyFileSnitch"
+cassandra_conf_snitch_regex: ".*endpoint_snitch:.*"
+cassandra_rack_conf_dc: "dc=dc2"
+cassandra_rack_conf_dc_regex: "^dc=.*"
+standard_delay: "30"
+check_bootstrap_file: "/var/log/cassandra/system.log"
+first_host_in_cluster: "jolnvmu34"
+host_from_dc2: "jolnvmu36"

@@ -1,0 +1,11 @@
+---
+# defaults file for roles/cassandra_idemia/cassandra_repository
+cassandra_version: "311x"
+debian_packages:
+  - apt-transport-https
+  - curl
+  - gnupg
+  - git
+  - screen
+  - openjdk-8-jre
+  - python-apt

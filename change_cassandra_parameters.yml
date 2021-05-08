@@ -1,0 +1,24 @@
+- name: Change cassandra parameter on all nodes
+  hosts: deploy_new_cassandra_ubuntu
+  become: yes
+  vars:
+    cassandra_conf_dir: /etc/cassandra
+    cassandra_conf_file: "{{ cassandra_conf_dir }}/cassandra.yaml"
+    cassandra_regex_value1: ".*endpoint_snitch:.*"
+    #    cassandra_parameter_value1: "endpoint_snitch: GossipingPropertyFileSnitch"
+    cassandra_parameter_value1: "endpoint_snitch: SimpleSnitch"
+  tasks:
+    - name: Print cassandra conf file
+      debug:
+        msg: "{{ cassandra_conf_file }}"
+    - name: Print cassandra parameters to set
+      debug:
+        msg: "{{ item }}"
+      with_items:
+        - "{{ cassandra_parameter_value1 }}"
+    - name: Modyfing parameter ... {{ cassandra_parameter_value1 }}
+      lineinfile:
+        path: "{{ cassandra_conf_file }}"
+        state: present
+        regexp: "{{ cassandra_regex_value1 }}"
+        line: "{{ cassandra_parameter_value1 }}"

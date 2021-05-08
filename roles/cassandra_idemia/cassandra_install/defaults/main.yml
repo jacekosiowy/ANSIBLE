@@ -1,0 +1,5 @@
+---
+# defaults file for roles/cassandra_idemia/cassandra_install
+cassandra_pkg: cassandra
+cassandra_tools_pkg: cassandra-tools
+cassandra_daemon: cassandra

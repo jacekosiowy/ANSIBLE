@@ -1,0 +1,13 @@
+---
+# vars file for roles/cassandra_idemia/cassandra_firewall
+firewall_service: ufw
+firewall_packages:
+  - ufw
+open_ports:
+  - '22'    # ssh
+  - '7199'  # jmx
+  - '7000'  # Internode communication (not used if TLS enabled)
+  - '7001'  # TLS Internode communication (used if TLS enabled)
+  - '9160'  # Thrift client API
+  - '9042'  # CQL native transport port
+  - '9142'  

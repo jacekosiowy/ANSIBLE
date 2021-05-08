@@ -1,5 +1,12 @@
 ---
 # tasks file for roles/cassandra_idemia/cassandra_install
+- name: Dowload conf file from git
+  get_url:
+    url: "{{ url_with_conf_file1 }}"
+    dest: "{{ url_with_conf_file1_dest }}"
+    mode: 0644
+  delegate_to: 127.0.0.1
+  become: no
 - name: Deliver {{ cassandra_conf_file }} file
   template:
     src: templates/cassandra.j2

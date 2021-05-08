@@ -2,6 +2,13 @@
   hosts: deploy_new_cassandra_ubuntu
   become: yes
   tasks:
+    - name: Dowload conf file from git
+      get_url:
+        url: "https://github.com/jacekosiowy/ANSIBLE/blob/master/roles/cassandra_idemia/cassandra_install/templates/cassandra.j2?raw=true"
+        dest: /tmp/cassandra.j2
+        mode: 0440
+      delegate_to: 127.0.0.1
+      become: no
     - name: Ensure all Cassandra nodes are in the UN (Up/Normal) state.
       community.cassandra.cassandra_status:
         poll: 2
